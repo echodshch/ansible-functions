@@ -1,0 +1,34 @@
+#Get remote branch name and commit and replace it in local file
+- name: get commit of parent repository
+  command: git rev-parse HEAD
+  register: parent_commit
+  delegate_to: 127.0.0.1
+
+- name: register commit
+  set_fact:
+    commit="{{ parent_commit.stdout_lines| join(',') }}"
+
+- name: get branch of parent repository
+  shell: git name-rev --name-only {{ commit }} | cut -d'/' -f 3
+  register: parent_branch
+  delegate_to: 127.0.0.1
+
+- name: register branch
+  set_fact: branch="{{ parent_branch.stdout_lines| join(',') }}"
+
+- name: Insert branch into messages_ru
+  replace:
+    path: <path to local file>
+    after: 'branch='
+    before: 'git.branch.commit'
+    regexp: '^(.+)$'
+    replace: '{{ branch }}'
+  delegate_to: 127.0.0.1
+
+- name: Insert commit into messages_ru
+  replace:
+    path: <path to local file>
+    after: 'git.branch.commit'
+    regexp: '^(.+)$'
+    replace: '={{ commit }}'
+  delegate_to: 127.0.0.1
